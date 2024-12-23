@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using Runtime.Constants;
 using Runtime.Models;
 using Snake.Scripts.Runtime.Tools;
@@ -14,7 +13,13 @@ namespace Runtime.Snake
     {
         public event UnityAction<Turn> Turned;
         
+        [Header("Parts")]
         [SerializeField] private SnakePart _snakePartPrefab;
+        [SerializeField] private int _initialPartsCount = 10;
+        [SerializeField] private float _firstPartOffsetMultiplier = 0.3f;
+        [SerializeField] private float _defaultPartOffsetMultiplier = 0.5f;
+        
+        [Header("Movement")]
         [SerializeField] private float _movementSpeed;
         [SerializeField] private float _turnDelaySeconds = 0.2f;
         
@@ -51,10 +56,17 @@ namespace Runtime.Snake
             _turnTimer.Start();
             
             InitInputs();
-            
-            SpawnPart();
-            SpawnPart();
-            SpawnPart();
+
+            for (int i = 0; i < _initialPartsCount; i++)
+            {
+                if (i is 0)
+                {
+                    SpawnPart(_firstPartOffsetMultiplier);
+                    continue;
+                }
+
+                SpawnPart();
+            }
             
             Turned?.Invoke(new Turn(transform.position, _direction));
         }
@@ -77,8 +89,11 @@ namespace Runtime.Snake
             _horizontalClickAction = InputSystem.actions.FindAction(InputNames.HorizontalClick);
             _verticalClickAction = InputSystem.actions.FindAction(InputNames.VerticalClick);
 
+            var debugSpawnAction = InputSystem.actions.FindAction(InputNames.Interact);
+            
             _horizontalClickAction.started += _ => OnInput(Vector2.right);
             _verticalClickAction.started += _ => OnInput(Vector2.up);
+            debugSpawnAction.started += _ => SpawnPart();
         }
 
         private void OnInput(Vector2 direction)
@@ -124,15 +139,17 @@ namespace Runtime.Snake
             }
         }
 
-        private void SpawnPart()
+        private void SpawnPart(float offsetMultiplier = -1)
         {
+            float multiplier = offsetMultiplier is -1 ? _defaultPartOffsetMultiplier : offsetMultiplier;
+            
             SnakePart lastPart = _parts.Last();
             
-            Vector2 spawnPosition = lastPart.transform.position + -lastPart.transform.up;
+            Vector2 spawnPosition = lastPart.transform.position + -lastPart.transform.up * multiplier;
             
             SnakePart snakePart = Instantiate(_snakePartPrefab, spawnPosition, Quaternion.identity);
 
-            snakePart.Init(this);
+            snakePart.Init(this, lastPart);
             
             _parts.Add(snakePart);
         }
