@@ -5,7 +5,6 @@ namespace Runtime.Snake
 {
     public class SnakePart : MonoBehaviour
     {
-        [SerializeField] private float _minDistanceBetweenParts = 0.5f;
         private Snake _snake;
         private SnakePart _nextPart;
 
@@ -17,6 +16,8 @@ namespace Runtime.Snake
 
         public Queue<Turn> Turns => _turns;
         public Turn TargetTurn => _targetTurn;
+        public Vector2 Direction => _direction;
+        
 
         public void Init(Snake snake, SnakePart nextPart)
         {
@@ -24,6 +25,7 @@ namespace Runtime.Snake
             _nextPart = nextPart;
             _turns = new Queue<Turn>(_nextPart.Turns);
             _targetTurn = _nextPart.TargetTurn;
+            _direction = _nextPart.Direction;
             _snake.Turned += OnTurned;
         }
 
@@ -61,8 +63,6 @@ namespace Runtime.Snake
         public void ApplyMovement()
         {
             if (_snake is null) return;
-            
-            if (Vector2.Distance(transform.position, _nextPart.transform.position) < _minDistanceBetweenParts) return;
             
             transform.Translate(_direction * (_snake.MovementSpeed * Time.fixedDeltaTime), Space.World);
         }

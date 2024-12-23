@@ -109,7 +109,7 @@ namespace Runtime.Snake
 
             if (Mathf.Approximately(-_direction.x, -input.x) || Mathf.Approximately(_direction.y, -direction.y)) return;
             
-            _direction = direction * input;
+            _direction = (direction * input).normalized;
             
             if (previousDirection != _direction)
             {
@@ -127,15 +127,15 @@ namespace Runtime.Snake
 
         private void RotateToDirection()
         {
-            if (Mathf.Abs(_direction.y) > 0)
+            if (_direction.y != 0)
             {
-                transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Approximately(_direction.y, -1) ? 180 : 0);
+                transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Approximately(_direction.y, 1) ? 0 : 180);
                 return;
             }
 
-            if (Mathf.Abs(_direction.x) > 0)
+            if (_direction.x != 0)
             {
-                transform.localRotation = Quaternion.Euler(0f, 0f, -90f * _direction.x);
+                transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Approximately(_direction.x, 1) ? -90 : 90);
             }
         }
 
