@@ -5,26 +5,27 @@ namespace Runtime.Snake
 {
     public class SnakePart : MonoBehaviour
     {
+        private const float MinDistanceToNextPart = 0.5f;
+        private const float MaxDistanceToNextPart = 0.5f;
+        
         private Snake _snake;
         private SnakePart _nextPart;
-
-        private Queue<Turn> _turns = new();
-        private Turn _targetTurn;
 
         private Vector2 _direction = Vector2.up;
         private const float EnoughDistanceToTurn = 0.05f;
 
-        public Queue<Turn> Turns => _turns;
-        public Turn TargetTurn => _targetTurn;
-        public Vector2 Direction => _direction;
-        
+        private Queue<Turn> Turns { get; set; } = new();
+
+        private Turn TargetTurn { get; set; }
+
+        private Vector2 Direction => _direction;
 
         public void Init(Snake snake, SnakePart nextPart)
         {
             _snake = snake;
             _nextPart = nextPart;
-            _turns = new Queue<Turn>(_nextPart.Turns);
-            _targetTurn = _nextPart.TargetTurn;
+            Turns = new Queue<Turn>(_nextPart.Turns);
+            TargetTurn = _nextPart.TargetTurn;
             _direction = _nextPart.Direction;
             _snake.Turned += OnTurned;
         }
@@ -41,31 +42,49 @@ namespace Runtime.Snake
             RotateToDirection();
         }
 
+        private void FixedUpdate()
+        {
+            ApplyMovement();
+        }
+
         private void OnTurned(Turn turn)
         {
-            _turns.Enqueue(turn);
+            Turns.Enqueue(turn);
 
-            if (_turns.Count == 1 && _targetTurn is null) _targetTurn = _turns.Dequeue();
+            if (Turns.Count == 1 && TargetTurn is null) TargetTurn = Turns.Dequeue();
         }
 
         private void CheckTurn()
         {
-            if (_targetTurn is null) return;
+            if (TargetTurn is null) return;
 
-            if (IsCloseEnoughTo(_targetTurn.Position))
-            {
-                _direction = _targetTurn.Direction;
-                transform.position = _targetTurn.Position;
-                _targetTurn = _turns.Count > 0 ? _turns.Dequeue() : null;
-            }
+            if (!IsCloseEnoughTo(TargetTurn.Position)) return;
+            
+            _direction = TargetTurn.Direction;
+            
+            transform.position = TargetTurn.Position;
+            
+            TargetTurn = Turns.Count > 0 ? Turns.Dequeue() : null;
         }
         
-        public void ApplyMovement()
+        private void ApplyMovement()
         {
             if (_snake is null) return;
-            
-            transform.Translate(_direction * (_snake.MovementSpeed * Time.fixedDeltaTime), Space.World);
+
+            float adjustedSpeed = _snake.MovementSpeed;
+    
+            if (TargetTurn != null)
+            {
+                float distanceToNext = Vector2.Distance(transform.position, _nextPart.transform.position);
+
+                if (distanceToNext < MinDistanceToNextPart) adjustedSpeed *= 0.5f;
+                
+                if (distanceToNext > MaxDistanceToNextPart) adjustedSpeed *= 1.5f;
+            }
+
+            transform.Translate(_direction * (adjustedSpeed * Time.fixedDeltaTime), Space.World);
         }
+
 
         private void RotateToDirection()
         {

@@ -2,13 +2,14 @@
 using System.Linq;
 using Runtime.Constants;
 using Runtime.Models;
-using Snake.Scripts.Runtime.Tools;
+using Snake.Scripts.Tools;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 namespace Runtime.Snake
 {
+    [RequireComponent(typeof(RoundedLineRenderer))]
     public class Snake : MonoBehaviour
     {
         public event UnityAction<Turn> Turned;
@@ -25,9 +26,10 @@ namespace Runtime.Snake
         
         private readonly List<SnakePart> _parts = new();
 
+        private Timer _turnTimer;
         private SnakePart _mainPart;
         private Vector2 _direction = new(1, 0);
-        [SerializeField] private Timer _turnTimer;
+        private RoundedLineRenderer _lineRendererRenderer;
         
         public float MovementSpeed => _movementSpeed;
 
@@ -44,6 +46,7 @@ namespace Runtime.Snake
         private void Awake()
         {
             _turnTimer = new Timer(_turnDelaySeconds);
+            _lineRendererRenderer = GetComponent<RoundedLineRenderer>();
             _turnTimer.Finished.AddListener(OnTurnDelayFinished);
         }
         
@@ -75,12 +78,12 @@ namespace Runtime.Snake
         {
             _turnTimer.Tick();
             RotateToDirection();
+            UpdateLine();
         }
 
         private void FixedUpdate()
         {
-            transform.Translate(_direction * (_movementSpeed * Time.fixedDeltaTime), Space.World);
-            _parts.ForEach(part => part.ApplyMovement());
+            ApplyMovement();
         }
 
         private void InitInputs()
@@ -101,6 +104,11 @@ namespace Runtime.Snake
             var input = _moveAction.ReadValue<Vector2>();
             if (!_turnTimer.IsRunning) Turn(direction, input);
             else _cachedInput = new CachedInput { Direction = direction, Input = input };
+        }
+
+        private void ApplyMovement()
+        {
+            transform.Translate(_direction * (_movementSpeed * Time.fixedDeltaTime), Space.World);
         }
 
         private void Turn(Vector2 direction, Vector2 input)
@@ -152,6 +160,18 @@ namespace Runtime.Snake
             snakePart.Init(this, lastPart);
             
             _parts.Add(snakePart);
+        }
+
+        private void UpdateLine()
+        {
+            var points = new List<Vector2>();
+            
+            foreach (var part in _parts)
+            {
+                points.Add(part.transform.position);
+            }
+            
+            _lineRendererRenderer.SetPositions(points);
         }
     }
 }
