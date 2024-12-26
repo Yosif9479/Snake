@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Runtime.Constants;
+using Runtime.FruitScripts;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -121,10 +122,18 @@ namespace Runtime.SnakeScripts
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.GetComponent<SnakePart>() is null) return;
-            
-            Died?.Invoke();
-            IsDead = true;
+            if (other.GetComponent<SnakePart>() is not null)
+            {
+                IsDead = true;
+                Died?.Invoke();
+                return;
+            }
+
+            if (other.GetComponent<Fruit>() is Fruit fruit)
+            {
+                fruit.Eat();
+                SpawnPart();
+            }
         }
 
         private void OnInput(Vector2 direction)
