@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace Runtime.Snake
+namespace Runtime.SnakeScripts
 {
     public class SnakePart : MonoBehaviour
     {
@@ -71,6 +71,8 @@ namespace Runtime.Snake
         {
             if (_snake is null) return;
 
+            if (_snake.IsDead) return;
+
             float adjustedSpeed = _snake.MovementSpeed;
     
             if (TargetTurn != null)
@@ -84,7 +86,6 @@ namespace Runtime.Snake
 
             transform.Translate(_direction * (adjustedSpeed * Time.fixedDeltaTime), Space.World);
         }
-
 
         private void RotateToDirection()
         {

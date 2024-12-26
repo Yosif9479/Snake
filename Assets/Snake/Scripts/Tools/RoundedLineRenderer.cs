@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Snake.Scripts.Tools
+namespace Tools
 {
     [RequireComponent(typeof(LineRenderer))]
     public class RoundedLineRenderer : MonoBehaviour

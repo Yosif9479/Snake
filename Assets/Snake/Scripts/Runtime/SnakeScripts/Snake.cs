@@ -1,18 +1,19 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
+using System.Collections.Generic;
 using Runtime.Constants;
-using Runtime.Models;
-using Snake.Scripts.Tools;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
+using Runtime.Models;
+using Tools;
 
-namespace Runtime.Snake
+namespace Runtime.SnakeScripts
 {
     [RequireComponent(typeof(RoundedLineRenderer))]
     public class Snake : MonoBehaviour
     {
         public event UnityAction<Turn> Turned;
+        public event UnityAction Died;
         
         [Header("Parts")]
         [SerializeField] private SnakePart _snakePartPrefab;
@@ -24,16 +25,18 @@ namespace Runtime.Snake
         [SerializeField] private float _movementSpeed;
         [SerializeField] private float _turnDelaySeconds = 0.2f;
         
-        private readonly List<SnakePart> _parts = new();
+        private List<SnakePart> _parts;
 
         private Timer _turnTimer;
         private SnakePart _mainPart;
-        private Vector2 _direction = new(1, 0);
+        private Vector2 _direction = new(0, 1);
         private RoundedLineRenderer _lineRendererRenderer;
         
         public float MovementSpeed => _movementSpeed;
 
         private CachedInput _cachedInput;
+        
+        public bool IsDead { get; private set; }
         
         #region INPUT_ACTIONS
 
@@ -42,9 +45,12 @@ namespace Runtime.Snake
         private InputAction _verticalClickAction;
 
         #endregion
-
+        
+        #region INITIALIZATION
+        
         private void Awake()
         {
+            _parts = new List<SnakePart>();
             _turnTimer = new Timer(_turnDelaySeconds);
             _lineRendererRenderer = GetComponent<RoundedLineRenderer>();
             _turnTimer.Finished.AddListener(OnTurnDelayFinished);
@@ -73,6 +79,33 @@ namespace Runtime.Snake
             
             Turned?.Invoke(new Turn(transform.position, _direction));
         }
+        
+        private void InitInputs()
+        {
+            _moveAction = InputSystem.actions.FindAction(InputNames.Move);
+            _horizontalClickAction = InputSystem.actions.FindAction(InputNames.HorizontalClick);
+            _verticalClickAction = InputSystem.actions.FindAction(InputNames.VerticalClick);
+
+            var debugSpawnAction = InputSystem.actions.FindAction(InputNames.Interact);
+            
+            _horizontalClickAction.started += OnHorizontalInput;
+            _verticalClickAction.started += OnVerticalInput;
+            debugSpawnAction.started += OnInteract;
+        }
+
+        private void OnDestroy()
+        {
+            _horizontalClickAction.started -= OnHorizontalInput;
+            _verticalClickAction.started -= OnVerticalInput;
+            var debugSpawnAction = InputSystem.actions.FindAction(InputNames.Interact);
+            debugSpawnAction.started -= OnInteract;
+        }
+        
+        private void OnHorizontalInput(InputAction.CallbackContext _) => OnInput(Vector2.right);
+        private void OnVerticalInput(InputAction.CallbackContext _) => OnInput(Vector2.up);
+        private void OnInteract(InputAction.CallbackContext _) => SpawnPart();
+        
+        #endregion
 
         private void Update()
         {
@@ -86,17 +119,12 @@ namespace Runtime.Snake
             ApplyMovement();
         }
 
-        private void InitInputs()
+        private void OnTriggerEnter2D(Collider2D other)
         {
-            _moveAction = InputSystem.actions.FindAction(InputNames.Move);
-            _horizontalClickAction = InputSystem.actions.FindAction(InputNames.HorizontalClick);
-            _verticalClickAction = InputSystem.actions.FindAction(InputNames.VerticalClick);
-
-            var debugSpawnAction = InputSystem.actions.FindAction(InputNames.Interact);
+            if (other.GetComponent<SnakePart>() is null) return;
             
-            _horizontalClickAction.started += _ => OnInput(Vector2.right);
-            _verticalClickAction.started += _ => OnInput(Vector2.up);
-            debugSpawnAction.started += _ => SpawnPart();
+            Died?.Invoke();
+            IsDead = true;
         }
 
         private void OnInput(Vector2 direction)
@@ -108,11 +136,14 @@ namespace Runtime.Snake
 
         private void ApplyMovement()
         {
+            if (IsDead) return;
             transform.Translate(_direction * (_movementSpeed * Time.fixedDeltaTime), Space.World);
         }
 
         private void Turn(Vector2 direction, Vector2 input)
         {
+            if (IsDead) return;
+            
             Vector2 previousDirection = _direction;
 
             if (Mathf.Approximately(-_direction.x, -input.x) || Mathf.Approximately(_direction.y, -direction.y)) return;

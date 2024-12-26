@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Snake.Scripts.Tools
+namespace Tools
 {
     [Serializable]
     public class Timer

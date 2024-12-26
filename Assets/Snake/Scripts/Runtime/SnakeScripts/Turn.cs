@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Runtime.Snake
+namespace Runtime.SnakeScripts
 {
     public class Turn
     {
