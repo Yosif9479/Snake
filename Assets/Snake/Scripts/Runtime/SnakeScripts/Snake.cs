@@ -206,11 +206,16 @@ namespace Runtime.SnakeScripts
         {
             var points = new List<Vector2>();
             
-            foreach (var part in _parts)
+            for (int i = 0; i < _parts.Count; i++)
             {
+                SnakePart part = _parts[i];
                 points.Add(part.transform.position);
+                if (i is 0)
+                {
+                    points.Add(transform.position + -transform.up * _firstPartOffsetMultiplier);
+                }
             }
-            
+
             _lineRendererRenderer.SetPositions(points);
         }
     }

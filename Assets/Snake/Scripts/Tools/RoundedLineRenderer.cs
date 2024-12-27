@@ -3,10 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Tools
 {
     [RequireComponent(typeof(LineRenderer))]
@@ -125,74 +121,5 @@ namespace Tools
             _points = points.ToList();
             RebuildLine();
         }
- 
-#if UNITY_EDITOR
- 
-        private void OnDrawGizmosSelected()
-        {
-            BuildLine(BuildLineMode.Gizmos);
-        }
- 
-        [CustomEditor(typeof(RoundedLineRenderer))]
-        public class CableLineEditor : Editor
-        {
-            public override void OnInspectorGUI()
-            {
-                var cableLine = (RoundedLineRenderer)target;
- 
-                bool changed = DrawDefaultInspector();
- 
-                EditorGUILayout.Space();
- 
-                if (GUILayout.Button("Add Point"))
-                {
-                    if (cableLine._points.Count == 0)
-                    {
-                        cableLine._points.Add(Vector2.zero);
-                    }
-                    else
-                    {
-                        cableLine._points.Add(cableLine._points[cableLine._points.Count - 1] + Vector2.right);
-                    }
- 
-                    EditorUtility.SetDirty(cableLine);
-                    changed = true;
-                }
- 
-                if (GUILayout.Button("Force Rebuild"))
-                {
-                    cableLine.RebuildLine();
-                }
- 
-                if (changed)
-                {
-                    cableLine.RebuildLine();
-                }
-            }
- 
-            private void OnSceneGUI()
-            {
-                var cableLine = (RoundedLineRenderer)target;
- 
-                var cableLineTransform = cableLine.transform;
-                var snap = new Vector3(0.5f, 0.5f, 0.5f);
- 
-                for (int i = 0; i < cableLine._points.Count; i++)
-                {
-                    var prevPosition = cableLineTransform.localToWorldMatrix.MultiplyPoint(cableLine._points[i]);
-                    var fmh_172_72_638706572273394147 = Quaternion.identity; var newPosition = Handles.FreeMoveHandle(prevPosition, .1f, snap, Handles.DotHandleCap);
- 
-                    if (newPosition != prevPosition)
-                    {
-                        newPosition.x = Mathf.Round(newPosition.x * 2) / 2;
-                        newPosition.y = Mathf.Round(newPosition.y * 2) / 2;
-                        cableLine._points[i] = cableLineTransform.worldToLocalMatrix.MultiplyPoint(newPosition);
-                        cableLine.RebuildLine();
-                        EditorUtility.SetDirty(cableLine);
-                    }
-                }
-            }
-        }
-#endif
     }
 }
