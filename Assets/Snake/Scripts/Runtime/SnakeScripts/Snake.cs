@@ -122,7 +122,7 @@ namespace Runtime.SnakeScripts
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (other.GetComponent<SnakePart>() is not null)
+            if (other.CompareTag("Uneatable"))
             {
                 IsDead = true;
                 Died?.Invoke();
